@@ -70,6 +70,24 @@ export class AuthService {
 
 	createAuthMiddleware(allowSkipMFA: boolean) {
 		return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+			// Auto-login as the first user (owner) - skip all authentication
+			try {
+				const owner = await this.userRepository.findOne({
+					where: { role: 'global:owner' },
+				});
+
+				if (owner) {
+					req.user = owner;
+					req.authInfo = {
+						usedMfa: false,
+					};
+					next();
+					return;
+				}
+			} catch (error) {
+				this.logger.debug('Failed to auto-login as owner', error);
+			}
+
 			const token = req.cookies[AUTH_COOKIE_NAME];
 			if (token) {
 				try {

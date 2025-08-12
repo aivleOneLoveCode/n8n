@@ -154,12 +154,34 @@ export const useUsersStore = defineStore(STORES.USERS, () => {
 	};
 
 	const loginWithCookie = async () => {
-		const user = await usersApi.loginCurrentUser(rootStore.restApiContext);
-		if (!user) {
-			return;
+		try {
+			const user = await usersApi.loginCurrentUser(rootStore.restApiContext);
+			if (user) {
+				setCurrentUser(user);
+				return;
+			}
+		} catch (e) {
+			// If login fails, create a fake user to skip authentication
+			console.log('Auto-creating fake user for no-auth mode');
 		}
 
-		setCurrentUser(user);
+		// Create a fake owner user when API call fails
+		const fakeUser: CurrentUserResponse = {
+			id: 'auto-user-1',
+			email: 'admin@example.com',
+			firstName: 'Admin',
+			lastName: 'User',
+			role: 'global:owner',
+			isPending: false,
+			mfaEnabled: false,
+			settings: {
+				userActivated: true,
+				dismissedCallouts: {},
+			},
+			personalizationAnswers: null,
+		};
+
+		setCurrentUser(fakeUser);
 	};
 
 	const initialize = async (options: { quota?: number } = {}) => {
