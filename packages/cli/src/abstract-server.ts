@@ -72,6 +72,13 @@ export abstract class AbstractServer {
 		this.app.set('view engine', 'handlebars');
 		this.app.set('views', TEMPLATES_DIR);
 
+		// Allow iframe embedding by removing X-Frame-Options
+		this.app.use((_req, res, next) => {
+			res.removeHeader('X-Frame-Options');
+			res.removeHeader('Content-Security-Policy');
+			next();
+		});
+
 		const proxyHops = this.globalConfig.proxy_hops;
 		if (proxyHops > 0) this.app.set('trust proxy', proxyHops);
 
